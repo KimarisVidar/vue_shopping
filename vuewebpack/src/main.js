@@ -1,11 +1,10 @@
 import Vue from 'vue'
 import App from './App'
+import axios from 'axios'         // 主要ajax 套件
+import VueAxios from 'vue-axios'  // 轉vue 套件
+import router from './router';
 
 import 'bootstrap';
-
-import axios from 'axios' // 主要ajax 套件
-import VueAxios from 'vue-axios' // 轉vue 套件
-import router from './router';
 
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
@@ -25,7 +24,7 @@ router.beforeEach((to, from, next) => {
   console.log('to', to, 'from', from, 'next', next)
   if( to.meta.requiresAuth ){
     //需要驗證
-    console.log('need verification')
+    console.log('需要重新驗證')
     const api = `${process.env.API_PATH}/api/user/check`;
     /*
       this.$http.post(api) 無法使用

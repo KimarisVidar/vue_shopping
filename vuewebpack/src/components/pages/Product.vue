@@ -195,13 +195,12 @@ export default {
             const api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/admin/product`;
             const vm = this;
             this.$http.post(api, {data: vm.tempProduct}).then((response) => {
-                console.log(response.data)
+                console.log('updateProduct', response.data)
             })
         },
         uploadFile () {},
         deletModal() {},
         deleteProduct () {},
-
     },
     created() {
         this.getProduct();
