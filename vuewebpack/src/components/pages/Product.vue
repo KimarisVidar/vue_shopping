@@ -1,10 +1,11 @@
 <template>
     <div>
+        <loading :active.sync="isLoading"></loading>
         <div class="text-right">
             <button 
                 type="button"
                 class="btn btn-primary mt-4" 
-                @click="openModal"
+                @click="openModal(true)"
             >建立新產品</button>
         </div>
         <table class="table mt-4">
@@ -16,6 +17,7 @@
                     <th width="80">售價</th>
                     <th width="100">是否啟用</th>
                     <th width="80">編輯</th>
+                    <th width="90">刪除產品</th>
                 </tr>
             </thead>
             <tbody>
@@ -33,11 +35,16 @@
                         <span v-else>未啟用</span>
                     </td>
                     <td>
-                        <button class="btn btn-outline-primary btn-sm">編輯</button>
+                        <button class="btn btn-outline-primary btn-sm"  
+                        @click="openModal(false, item)">編輯</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-outline-danger btn-sm" data-target="#delProductModal" @click="deletModal(item)">刪除</button>
                     </td>
                 </tr>
             </tbody>
         </table>
+        <Pagination @changePage="getProduct" :pagination="pagination"></Pagination>
         <!-- Modal -->
         <div class="modal fade" id="productModal" tabindex="-1" role="dialog"
             aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -62,9 +69,9 @@
                         </div>
                         <div class="form-group">
                         <label for="customFile">或 上傳圖片
-                            <i class="fas fa-spinner fa-spin"></i>
+                            <i class="fas fa-spinner fa-spin" v-if="status.fileUploading"></i>
                         </label>
-                        <input type="file" id="customFile" class="form-control" ref="files">
+                        <input type="file" id="customFile" class="form-control" ref="files" @change="uploadFile">
                         </div>
                         <img img="https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=828346ed697837ce808cae68d3ddc3cf&auto=format&fit=crop&w=1350&q=80"
                         class="img-fluid" :src="tempProduct.imageUrl" alt="">
@@ -160,7 +167,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger"
+                    <button type="button" class="btn btn-danger" @click="deleteProduct"
                     >確認刪除</button>
                 </div>
                 </div>
@@ -171,39 +178,124 @@
 <script>
 /* global $ */
 import $ from 'jquery'
+import Pagination from '../Pagination'
 
 export default {
+    components: {
+        Pagination,
+    },
     data(){
         return{
             products: [],
             tempProduct: {},
+            pagination: {},
+            isNew: false,
+            isLoading: false,
+            //font-aweson
+            status: {
+                fileUploading: false
+            },
         }
     },
     methods: {
-        getProduct() {
-            const api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/products`;
+        getProduct(page = 1) {
             const vm = this;
+            const api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/products?page=${page}`;
+            vm.isLoading = true;
             this.$http.get(api).then((response) => {
-                // console.log(response.data.products)
-                vm.products = response.data.products
+                // console.log('products',response.data.products)
+                vm.isLoading = false;
+                vm.products = response.data.products;
+                vm.pagination = response.data.pagination;
             })
         },
-        openModal() {
+        openModal(isNew, item) {
+            // const vm = this;
+            if( isNew ){
+                this.tempProduct = {};
+                this.isNew = true;
+            }else{
+                /*
+                    如果在目標物件裡的屬性名稱(key)和來源物件的屬性名稱相同，將會被覆寫。
+                    若來源物件之間又有相同的屬性名稱，則後者會將前者覆寫。
+                    https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+                */
+                vm.tempProduct = Object.assign({},item);
+                vm.isNew = false;
+            }
             $('#productModal').modal('show');
         },
         updateProduct() {
-            const api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/admin/product`;
             const vm = this;
-            this.$http.post(api, {data: vm.tempProduct}).then((response) => {
-                console.log('updateProduct', response.data)
+            let api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/admin/product`;
+            let httpMethod = 'post';
+            if(!vm.isNew){
+                api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/admin/product/${vm.tempProduct.id}`;
+                httpMethod = 'put';
+            }
+            this.$http[httpMethod](api, {data: vm.tempProduct}).then((response) => {
+                if( response.data.success ){
+                    // console.log('response.data.success',response)
+                    $('#productModal').modal('hide');
+                    vm.getProduct();
+                    console.log('新增成功')
+                    this.$bus.$emit('message:push', response.data.message, 'success')
+                }else{
+                    $('#productModal').modal('hide');
+                    vm.getProduct();
+                    console.log('新增失敗')
+                    this.$bus.$emit('message:push', response.data.message, 'danger')
+                }
             })
         },
-        uploadFile () {},
-        deletModal() {},
-        deleteProduct () {},
+        uploadFile () {
+            const vm = this;
+            const uploadFiled = this.$refs.files.files[0];
+            const formData = new FormData();
+            formData.append('file-to-upload', uploadFiled);
+            const url = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/admin/upload`;
+            vm.status.fileUploading = true;
+            this.$http.post(url, formData,{
+                headers:{
+                    'Content-Type': 'multipart/form-data',
+                }
+            }).then((response) => {
+                console.log('uploadFile', response.data);
+                vm.status.fileUploading = false;
+                if( response.data.success){
+                    // vm.tempProduct.imageUrl = response.data.imageUrl;
+                    vm.$set(vm.tempProduct, 'imageUrl', response.data.imageUrl)
+                }else{
+                    this.$bus.$emit('message:push', response.data.message, 'danger')
+                }
+            })
+        },
+        deletModal(item) {
+            this.tempProduct = Object.assign({}, item) // 淺拷貝點擊當前的項目出來改變
+            $('#delProductModal').modal('show')
+        },
+        deleteProduct () {
+            const vm = this;
+            let api = `${process.env.API_PATH}/api/${process.env.CUSTOM_PATH}/admin/product/${vm.tempProduct.id}`;
+            this.$http.delete(api).then((response) => {
+                if( response.data.success ){
+                    vm.getProduct();
+                    $('#delProductModal').modal('hide');
+                    console.log('刪除成功');
+                    this.$bus.$emit('message:push', response.data.message, 'success')
+                }else{
+                    vm.getProduct();
+                    $('#delProductModal').modal('hide');
+                    console.log('刪除失敗');
+                    this.$bus.$emit('message:push', response.data.message, 'danger')
+                }
+            })
+        },
     },
     created() {
         this.getProduct();
+        //AlertMessage
+        // this.$bus.$emit('message:push', 'test', 'success')
     },
 }
 </script>

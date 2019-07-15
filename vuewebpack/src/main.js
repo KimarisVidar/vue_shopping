@@ -3,11 +3,16 @@ import App from './App'
 import axios from 'axios'         // 主要ajax 套件
 import VueAxios from 'vue-axios'  // 轉vue 套件
 import router from './router';
+import Loading from 'vue-loading-overlay';
+//evenbus
+import './bus';
+import 'vue-loading-overlay/dist/vue-loading.css';
 
-import 'bootstrap';
+import 'bootstrap'; 
 
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
+Vue.component('Loading', Loading);
 
 axios.defaults.withCredentials = true;
 
@@ -21,7 +26,6 @@ new Vue({
 })
 
 router.beforeEach((to, from, next) => {
-  console.log('to', to, 'from', from, 'next', next)
   if( to.meta.requiresAuth ){
     //需要驗證
     console.log('需要重新驗證')

@@ -6,10 +6,10 @@
 
 <script>
 export default {
-  name: 'HelloWorld',
+  // name: 'HelloWorld',
   data () {
     return {
-      msg: 'Welcome to Your Vue.js App'
+      // msg: 'Welcome to Your Vue.js App'
       // msg: process.env.NODE_ENV,   // node.js 寫法
       // http: process.env.HTTP_HOST   
     }
