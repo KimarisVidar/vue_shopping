@@ -6,6 +6,7 @@ import VueRouter from 'vue-router';
 import Login from '@/components/pages/Login';
 import Dashboard from '@/components/Dashboard';
 import Product from '@/components/pages/Product';
+import CustomerOrder from '@/components/pages/CustomerOrder';
 
 Vue.use(VueRouter);
 
@@ -29,23 +30,35 @@ export default new VueRouter({
         //     }
         // },
         {
-            path:'/login',        //虛擬路徑
-            name:'登入',        //名稱
-            component: Login, //對應的元件
+            path:'/login',
+            name:'登入', 
+            component: Login, 
         },
         {
-            path: '/admin', //虛擬路徑
-            name: 'Dashboard', //名稱
-            component: Dashboard, //對應的元件
+            path: '/admin',
+            name: 'Dashboard',
+            component: Dashboard,
             children: [
                 {
-                    path: 'product', //虛擬路徑
-                    name: 'Product', //名稱
-                    component: Product, //對應的元件
+                    path: 'product',
+                    name: 'Product',
+                    component: Product,
                     meta: {
                         requiresAuth: true
                     },
                 },
+            ]
+        },
+        {
+            path: '/', 
+            name: 'Dashboard', 
+            component: Dashboard, 
+            children: [
+                {
+                    path: 'customer_order', 
+                    name: 'CustomerOrder',
+                    component: CustomerOrder,
+                }, 
             ]
         },
     ],

@@ -1,18 +1,23 @@
 import Vue from 'vue'
-import App from './App'
 import axios from 'axios'         // 主要ajax 套件
 import VueAxios from 'vue-axios'  // 轉vue 套件
-import router from './router';
 import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+import 'bootstrap';
+
+import App from './App'
+import router from './router';
 //evenbus
 import './bus';
-import 'vue-loading-overlay/dist/vue-loading.css';
+//先import檔案進來
+import currencyFilter from './filters/currency'
 
-import 'bootstrap'; 
 
+//在呼叫使用
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
 Vue.component('Loading', Loading);
+Vue.filter('currency', currencyFilter);
 
 axios.defaults.withCredentials = true;
 
